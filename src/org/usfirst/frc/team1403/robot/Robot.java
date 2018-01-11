@@ -31,8 +31,8 @@ public class Robot extends IterativeRobot {
 	public int echoiter;
 	public Recording currRecord;
 	private static Recorder recorder;
-	private static final String readPath = "./readPath.csv"; //readPath.csv
-	private static final String writePath = "./writePath.csv"; //writePath.csv
+	private static final String readPath = "./testPath.csv"; //readPath.csv
+	private static final String writePath = "./testPath.csv"; //writePath.csv
 
 	Command autonomousCommand;
 	SendableChooser<Command> chooser = new SendableChooser<>();
@@ -91,7 +91,10 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void autonomousPeriodic() { //20 ms
-		if(echoiter < recorder.currsize) {
+		if(echoiter < recorder.currsize) { //250 degrees / sec
+			//set gyro angle
+			//set speed left based on delta encoder left
+			//set speed right based on delta encoder right
 			++echoiter;
 		}
 		Scheduler.getInstance().run();
