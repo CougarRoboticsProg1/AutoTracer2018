@@ -3,6 +3,7 @@ package org.usfirst.frc.team1403.robot;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.CANSpeedController.ControlMode;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Scheduler;
@@ -28,10 +29,8 @@ public class Robot extends IterativeRobot {
 	public EchoOn echotrigger = new EchoOn(this);
 	public static final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
 	public static OI oi;
-	public static AnalogGyro gyro;
 	public static DriveTrain drivetrain;
 	public boolean record;
-	public boolean isSet;
 	public int echoiter;
 	public Recording currRecord;
 	private static Recorder recorder;
@@ -49,7 +48,6 @@ public class Robot extends IterativeRobot {
 	public void robotInit() {
 		recorder = new Recorder(readPath, writePath);
 		echoiter = 0;
-		isSet = true;
 		oi = new OI();
 		chooser.addDefault("Default Auto", new ExampleCommand());
 		// chooser.addObject("My Auto", new MyAutoCommand());
@@ -105,10 +103,10 @@ public class Robot extends IterativeRobot {
 			{
 				double delta_t = recorder.recordings[echoiter].tstamp - recorder.recordings[echoiter-1].tstamp;
 				if(System.currentTimeMillis() - startTime >= delta_t) { //timestamp match
-					drivetrain.m1.set(recorder.recordings[echoiter].righte);
-					drivetrain.m2.set(recorder.recordings[echoiter].righte);
-					drivetrain.m3.set(recorder.recordings[echoiter].lefte);
-					drivetrain.m4.set(recorder.recordings[echoiter].lefte);					
+					DriveTrain.setSpeed(drivetrain.m1, recorder.recordings[echoiter].righte);
+					DriveTrain.setSpeed(drivetrain.m2, recorder.recordings[echoiter].righte);
+					DriveTrain.setSpeed(drivetrain.m3, recorder.recordings[echoiter].lefte);
+					DriveTrain.setSpeed(drivetrain.m4, recorder.recordings[echoiter].lefte);					
 					startTime = System.currentTimeMillis();
 				} else {
 					Timer.delay(0.001); //delay iter until ready
@@ -120,10 +118,10 @@ public class Robot extends IterativeRobot {
 		
 		if(recorder.recordings[echoiter].tstamp == 0) //reset vals
 		{
-			drivetrain.m1.set(0);
-			drivetrain.m2.set(0);
-			drivetrain.m3.set(0);
-			drivetrain.m4.set(0);		
+			DriveTrain.setSpeed(drivetrain.m1, 0);
+			DriveTrain.setSpeed(drivetrain.m2, 0);
+			DriveTrain.setSpeed(drivetrain.m3, 0);
+			DriveTrain.setSpeed(drivetrain.m4, 0);		
 		}
 		Scheduler.getInstance().run();
 	}
@@ -147,8 +145,8 @@ public class Robot extends IterativeRobot {
 		oi.button.whenPressed(echotrigger);
 		if(record) {
 			currRecord.tstamp = System.currentTimeMillis(); //clock reading
-			currRecord.lefte = drivetrain.m1.get();
-			currRecord.righte = drivetrain.m3.get();
+			currRecord.lefte = drivetrain.m1.getMotorOutputPercent();
+			currRecord.righte = drivetrain.m3.getMotorOutputPercent();
 			recorder.writeFile(currRecord);
 		}
 	}
