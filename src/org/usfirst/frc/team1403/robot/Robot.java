@@ -4,10 +4,13 @@ import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.RobotDrive;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+import java.io.IOException;
 
 import org.usfirst.frc.team1403.robot.commands.EchoOn;
 import org.usfirst.frc.team1403.robot.commands.ExampleCommand;
@@ -28,6 +31,7 @@ public class Robot extends IterativeRobot {
 	public static AnalogGyro gyro;
 	public static DriveTrain drivetrain;
 	public boolean record;
+	public boolean isSet;
 	public int echoiter;
 	public Recording currRecord;
 	private static Recorder recorder;
@@ -45,6 +49,7 @@ public class Robot extends IterativeRobot {
 	public void robotInit() {
 		recorder = new Recorder(readPath, writePath);
 		echoiter = 0;
+		isSet = true;
 		oi = new OI();
 		chooser.addDefault("Default Auto", new ExampleCommand());
 		// chooser.addObject("My Auto", new MyAutoCommand());
@@ -64,6 +69,7 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void disabledPeriodic() {
 		Scheduler.getInstance().run();
+		recorder.doneWrite();
 	}
 
 	/**
@@ -81,6 +87,7 @@ public class Robot extends IterativeRobot {
 	public void autonomousInit() {
 		autonomousCommand = chooser.getSelected();
 		recorder.readFile(); //read file
+		echoiter = 1;
 		// schedule the autonomous command (example)
 		if (autonomousCommand != null)
 			autonomousCommand.start();
@@ -91,11 +98,32 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void autonomousPeriodic() { //20 ms
-		if(echoiter < recorder.currsize) { //250 degrees / sec
-			//set gyro angle
-			//set speed left based on delta encoder left
-			//set speed right based on delta encoder right
+		long startTime = System.currentTimeMillis();
+		while (isAutonomous())
+		{
+			if (echoiter < recorder.currsize)
+			{
+				double delta_t = recorder.recordings[echoiter].tstamp - recorder.recordings[echoiter-1].tstamp;
+				if(System.currentTimeMillis() - startTime >= delta_t) { //timestamp match
+					drivetrain.m1.set(recorder.recordings[echoiter].righte);
+					drivetrain.m2.set(recorder.recordings[echoiter].righte);
+					drivetrain.m3.set(recorder.recordings[echoiter].lefte);
+					drivetrain.m4.set(recorder.recordings[echoiter].lefte);					
+					startTime = System.currentTimeMillis();
+				} else {
+					Timer.delay(0.001); //delay iter until ready
+					continue;
+				}
+			}
 			++echoiter;
+		}
+		
+		if(recorder.recordings[echoiter].tstamp == 0) //reset vals
+		{
+			drivetrain.m1.set(0);
+			drivetrain.m2.set(0);
+			drivetrain.m3.set(0);
+			drivetrain.m4.set(0);		
 		}
 		Scheduler.getInstance().run();
 	}
@@ -118,10 +146,9 @@ public class Robot extends IterativeRobot {
 		Scheduler.getInstance().run();
 		oi.button.whenPressed(echotrigger);
 		if(record) {
-			currRecord.tstamp = 0; //clock reading
-			currRecord.gyror = gyro.getAngle(); //certain degrees
-			//currRecord.lefte = ;
-			//currRecord.righte = ;
+			currRecord.tstamp = System.currentTimeMillis(); //clock reading
+			currRecord.lefte = drivetrain.m1.get();
+			currRecord.righte = drivetrain.m3.get();
 			recorder.writeFile(currRecord);
 		}
 	}

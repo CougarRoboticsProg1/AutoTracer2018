@@ -37,10 +37,9 @@ public class Recorder {
 		try {
 			while((line = bufferedReader.readLine()) != null) {
 				divider = line.split(",");
-				recordings[currsize].tstamp = Integer.parseInt(divider[0]);
-				recordings[currsize].gyror = Double.parseDouble(divider[1]);
-				recordings[currsize].lefte = Double.parseDouble(divider[2]);
-				recordings[currsize].righte = Double.parseDouble(divider[3]);
+				recordings[currsize].tstamp = Long.parseLong(divider[0]);
+				recordings[currsize].lefte = Double.parseDouble(divider[1]);
+				recordings[currsize].righte = Double.parseDouble(divider[2]);
 				++currsize;
 			}
 		} catch (NumberFormatException e) {
@@ -55,6 +54,9 @@ public class Recorder {
 		}
 	}
 	public void writeFile(Recording recording) {
-		printWriter.println(recording.tstamp + "," + recording.gyror + "," + recording.lefte + "," + recording.righte);
+		printWriter.println(recording.tstamp + "," + "," + recording.lefte + "," + recording.righte);
+	}
+	public void doneWrite() {
+		printWriter.close();
 	}
 }
