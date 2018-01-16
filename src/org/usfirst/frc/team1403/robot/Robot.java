@@ -1,20 +1,14 @@
 package org.usfirst.frc.team1403.robot;
 
-import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.AnalogGyro;
-import edu.wpi.first.wpilibj.CANSpeedController.ControlMode;
-import edu.wpi.first.wpilibj.RobotDrive;
+import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Scheduler;
-import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-import java.io.IOException;
 
 import org.usfirst.frc.team1403.robot.commands.EchoOn;
-import org.usfirst.frc.team1403.robot.commands.ExampleCommand;
 import org.usfirst.frc.team1403.robot.subsystems.DriveTrain;
 import org.usfirst.frc.team1403.robot.subsystems.ExampleSubsystem;
 
@@ -25,17 +19,17 @@ import org.usfirst.frc.team1403.robot.subsystems.ExampleSubsystem;
  * creating this project, you must also update the manifest file in the resource
  * directory.
  */
-public class Robot extends IterativeRobot {
-	public EchoOn echotrigger = new EchoOn(this);
+public class Robot extends TimedRobot {
+	public EchoOn echotrigger = new EchoOn();
 	public static final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
-	public static OI oi;
+	public static OI m_oi;
 	public static DriveTrain drivetrain;
-	public boolean record;
+	public static boolean record;
 	public int echoiter;
 	public Recording currRecord;
 	private static Recorder recorder;
-	private static final String readPath = "./testPath.csv"; //readPath.csv
-	private static final String writePath = "./testPath.csv"; //writePath.csv
+	private static final String readPath = "/home/lvuser/test1.txt"; //readPath.csv
+	private static final String writePath = "/home/lvuser/test2.txt"; //writePath.csv
 
 	Command autonomousCommand;
 	SendableChooser<Command> chooser = new SendableChooser<>();
@@ -47,9 +41,12 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void robotInit() {
 		recorder = new Recorder(readPath, writePath);
+		currRecord = new Recording(0, 0, 0);
+		record = false;
 		echoiter = 0;
-		oi = new OI();
-		chooser.addDefault("Default Auto", new ExampleCommand());
+		drivetrain = new DriveTrain();
+		m_oi = new OI();
+		//chooser.addDefault("Default Auto", new ExampleCommand());
 		// chooser.addObject("My Auto", new MyAutoCommand());
 		SmartDashboard.putData("Auto mode", chooser);
 	}
@@ -61,13 +58,12 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void disabledInit() {
-
+		recorder.doneWrite();
 	}
 
 	@Override
 	public void disabledPeriodic() {
 		Scheduler.getInstance().run();
-		recorder.doneWrite();
 	}
 
 	/**
@@ -103,10 +99,10 @@ public class Robot extends IterativeRobot {
 			{
 				double delta_t = recorder.recordings[echoiter].tstamp - recorder.recordings[echoiter-1].tstamp;
 				if(System.currentTimeMillis() - startTime >= delta_t) { //timestamp match
-					DriveTrain.setSpeed(drivetrain.m1, recorder.recordings[echoiter].righte);
-					DriveTrain.setSpeed(drivetrain.m2, recorder.recordings[echoiter].righte);
-					DriveTrain.setSpeed(drivetrain.m3, recorder.recordings[echoiter].lefte);
-					DriveTrain.setSpeed(drivetrain.m4, recorder.recordings[echoiter].lefte);					
+				//	DriveTrain.setSpeed(drivetrain.m1, recorder.recordings[echoiter].righte);
+					DriveTrain.setSpeed(drivetrain.m6, recorder.recordings[echoiter].righte);
+					DriveTrain.setSpeed(drivetrain.m2, recorder.recordings[echoiter].lefte);
+				//	DriveTrain.setSpeed(drivetrain.m4, recorder.recordings[echoiter].lefte);					
 					startTime = System.currentTimeMillis();
 				} else {
 					Timer.delay(0.001); //delay iter until ready
@@ -114,15 +110,14 @@ public class Robot extends IterativeRobot {
 				}
 			}
 			++echoiter;
-		}
-		
-		if(recorder.recordings[echoiter].tstamp == 0) //reset vals
-		{
-			DriveTrain.setSpeed(drivetrain.m1, 0);
-			DriveTrain.setSpeed(drivetrain.m2, 0);
-			DriveTrain.setSpeed(drivetrain.m3, 0);
-			DriveTrain.setSpeed(drivetrain.m4, 0);		
-		}
+			if(recorder.recordings[echoiter+1].tstamp == 0) //reset vals
+			{
+				DriveTrain.setSpeed(drivetrain.m6, 0);
+			//	DriveTrain.setSpeed(drivetrain.m2, 0);
+				DriveTrain.setSpeed(drivetrain.m2, 0);
+			//	DriveTrain.setSpeed(drivetrain.m4, 0);		
+			}
+		}	
 		Scheduler.getInstance().run();
 	}
 
@@ -142,11 +137,11 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void teleopPeriodic() {
 		Scheduler.getInstance().run();
-		oi.button.whenPressed(echotrigger);
 		if(record) {
-			currRecord.tstamp = System.currentTimeMillis(); //clock reading
-			currRecord.lefte = drivetrain.m1.getMotorOutputPercent();
-			currRecord.righte = drivetrain.m3.getMotorOutputPercent();
+		 	currRecord.tstamp = (int) (Timer.getFPGATimestamp() * 1000); //clock reading
+			//System.out.println(Timer.getFPGATimestamp());
+			currRecord.lefte = drivetrain.m6.getMotorOutputPercent();
+			currRecord.righte = drivetrain.m2.getMotorOutputPercent();
 			recorder.writeFile(currRecord);
 		}
 	}
@@ -155,7 +150,5 @@ public class Robot extends IterativeRobot {
 	 * This function is called periodically during test mode
 	 */
 	@Override
-	public void testPeriodic() {
-		LiveWindow.run();
-	}
+	public void testPeriodic() {}
 }

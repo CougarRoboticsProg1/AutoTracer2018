@@ -19,27 +19,52 @@ public class Recorder {
 		currsize = 0;
 		this.fileRead = fileRead;
         this.fileWrite = fileWrite;
+        File filer = new File(this.fileRead);
+        File filew = new File(this.fileWrite);
+        if(!filer.exists()) {
+        	try {
+				filer.createNewFile();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+        if(!filew.exists()) {
+        	try {
+				filew.createNewFile();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
 		try {
-			fileReader = new FileReader(this.fileRead);
+			fileReader = new FileReader(filer);
+			bufferedReader =  new BufferedReader(fileReader);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-        bufferedReader =  new BufferedReader(fileReader);
+      
         try {
-			fileWriter = new FileWriter(this.fileWrite);
+			fileWriter = new FileWriter(filew);
+			printWriter = new PrintWriter(fileWriter);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-        printWriter = new PrintWriter(fileWriter);
+        
         recordings = new Recording[RMAX];
+        for(int i = 0; i < RMAX; i++) {
+        	recordings[i] = new Recording(0, 0.0, 0.0);
+        }
 	}
 	public void readFile() {
 		try {
 			while((line = bufferedReader.readLine()) != null) {
 				divider = line.split(",");
-				recordings[currsize].tstamp = Long.parseLong(divider[0]);
-				recordings[currsize].lefte = Double.parseDouble(divider[1]);
-				recordings[currsize].righte = Double.parseDouble(divider[2]);
+				if(divider.length < 3) break;
+				System.out.println(divider[0] + " " + divider[1] + " " + divider[2]);
+				recordings[currsize].tstamp = Integer.parseInt(divider[0]);
+				recordings[currsize].lefte = Double.parseDouble(divider[2]);
+				recordings[currsize].righte = Double.parseDouble(divider[1]);
 				++currsize;
 			}
 		} catch (NumberFormatException e) {
@@ -54,9 +79,19 @@ public class Recorder {
 		}
 	}
 	public void writeFile(Recording recording) {
-		printWriter.println(recording.tstamp + "," + "," + recording.lefte + "," + recording.righte);
+		try {
+			printWriter.println(recording.tstamp  + "," + recording.lefte + "," + recording.righte);
+		} catch (Exception e) {
+			//e.printStackTrace();
+		}
 	}
 	public void doneWrite() {
-		printWriter.close();
+		try {
+			// printWriter.close();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 	}
 }

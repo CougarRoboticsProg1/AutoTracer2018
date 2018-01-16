@@ -7,9 +7,9 @@ import org.usfirst.frc.team1403.robot.Robot;
 /**
  *
  */
-public class EchoOn extends Command {
+public class EchoOff extends Command {
 	
-	public EchoOn() {
+	public EchoOff() {
 		
 	}
 
