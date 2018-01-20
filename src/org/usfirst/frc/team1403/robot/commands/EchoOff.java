@@ -17,6 +17,7 @@ public class EchoOff extends Command {
 	@Override
 	protected void initialize() {
 		Robot.record = (Robot.record) ? false : true;
+		Robot.flag = true;
 		System.out.println(Robot.record);
 	}
 

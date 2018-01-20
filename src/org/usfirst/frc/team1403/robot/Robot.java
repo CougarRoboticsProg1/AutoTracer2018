@@ -1,6 +1,7 @@
 package org.usfirst.frc.team1403.robot;
 
 import edu.wpi.first.wpilibj.command.Command;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Scheduler;
@@ -26,10 +27,11 @@ public class Robot extends TimedRobot {
 	public static DriveTrain drivetrain;
 	public static boolean record;
 	public int echoiter;
+	public static boolean flag;
 	public Recording currRecord;
 	private static Recorder recorder;
-	private static final String readPath = "/home/lvuser/test1.txt"; //readPath.csv
-	private static final String writePath = "/home/lvuser/test2.txt"; //writePath.csv
+	private static final String readPath = "/home/lvuser/demor.txt"; //readPath.csv
+	private static final String writePath = "/home/lvuser/demof.txt"; //writePath.csv
 
 	Command autonomousCommand;
 	SendableChooser<Command> chooser = new SendableChooser<>();
@@ -40,12 +42,15 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void robotInit() {
-		recorder = new Recorder(readPath, writePath);
+		recorder = new Recorder(writePath, readPath);
 		currRecord = new Recording(0, 0, 0);
 		record = false;
+		flag = false;
 		echoiter = 0;
 		drivetrain = new DriveTrain();
 		m_oi = new OI();
+		DriverStation.getInstance().getGameSpecificMessage();
+		
 		//chooser.addDefault("Default Auto", new ExampleCommand());
 		// chooser.addObject("My Auto", new MyAutoCommand());
 		SmartDashboard.putData("Auto mode", chooser);
@@ -58,7 +63,7 @@ public class Robot extends TimedRobot {
 	 */
 	@Override
 	public void disabledInit() {
-		recorder.doneWrite();
+		
 	}
 
 	@Override
@@ -82,6 +87,7 @@ public class Robot extends TimedRobot {
 		autonomousCommand = chooser.getSelected();
 		recorder.readFile(); //read file
 		echoiter = 1;
+		
 		// schedule the autonomous command (example)
 		if (autonomousCommand != null)
 			autonomousCommand.start();
@@ -109,7 +115,9 @@ public class Robot extends TimedRobot {
 					continue;
 				}
 			}
-			++echoiter;
+			if(echoiter < 50000) {
+				++echoiter;
+			}
 			if(recorder.recordings[echoiter+1].tstamp == 0) //reset vals
 			{
 				DriveTrain.setSpeed(drivetrain.m6, 0);
@@ -137,13 +145,18 @@ public class Robot extends TimedRobot {
 	@Override
 	public void teleopPeriodic() {
 		Scheduler.getInstance().run();
-		if(record) {
+		if(flag) {
+			recorder.doneWrite();
+			record = false;
+			flag = false;
+		}
+		else if(record) {
 		 	currRecord.tstamp = (int) (Timer.getFPGATimestamp() * 1000); //clock reading
 			//System.out.println(Timer.getFPGATimestamp());
 			currRecord.lefte = drivetrain.m6.getMotorOutputPercent();
 			currRecord.righte = drivetrain.m2.getMotorOutputPercent();
 			recorder.writeFile(currRecord);
-		}
+		} 
 	}
 
 	/**

@@ -87,7 +87,7 @@ public class Recorder {
 	}
 	public void doneWrite() {
 		try {
-			// printWriter.close();
+			printWriter.close();
 		}
 		catch (Exception e) {
 			e.printStackTrace();
